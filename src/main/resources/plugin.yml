@@ -1,0 +1,25 @@
+name: Tether
+main: com.bluekelp.bukkit.tether.Tether
+version: 1.0.0
+website: https://github.com/bluelelp/tether
+author: bluekelp.com
+description: >
+             Test/proof-of-concept plugin to tether players to anchors in the world.
+commands:
+  tether:
+    description: Tether player to anchor.
+    usage: |
+           /<command>
+           Example: /<command> - tether yourself
+  untether:
+    description: Un-tether player to anchor.
+    usage: |
+           /<command>
+           Example: /<command> - untether yourself
+
+permissions:
+  tether.*:
+    description: Gives all permissions for tether
+    default: op
+    children:
+      tether.tether: true
