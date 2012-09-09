@@ -22,8 +22,8 @@ public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 
 	@EventHandler
 	public void playerMove(PlayerMoveEvent evt) {
-		//debug("player moved from" + evt.getFrom() + " to " + evt.getTo());
-		Location playerLocation = evt.getPlayer().getLocation();
+		Player player = evt.getPlayer();
+		Location playerLocation = player.getLocation();
 		double squaredLeashLength = leashLength * leashLength;
 
 		double distanceSquared = playerLocation.distanceSquared(anchor); 
@@ -32,15 +32,12 @@ public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 			debug("too far from anchor");
 			Location newLocation = playerLocation.clone();  // clone to keep pitch/yaw
 			
-			newLocation.setPitch(playerLocation.getPitch());
-			newLocation.setYaw(playerLocation.getYaw());
-
 			// update just x,y,z
 			newLocation.setX(anchor.getX());
 			newLocation.setY(anchor.getY());
 			newLocation.setZ(anchor.getZ());
 
-			evt.getPlayer().teleport(anchor);
+			player.teleport(anchor);
 		}
 	}
 
