@@ -58,6 +58,8 @@ public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 	}
 	
 	void loadConfig() {
+		this.reloadConfig();  // load changes
+
 		double x = this.getConfig().getDouble("tether.anchor.x", 0);
 		double y = this.getConfig().getDouble("tether.anchor.y", 100);
 		double z = this.getConfig().getDouble("tether.anchor.z", 0);
