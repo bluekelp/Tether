@@ -12,9 +12,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.util.Vector;
 
 public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 
@@ -22,7 +20,7 @@ public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 
 	double leashLength = 3;
 
-	@EventHandler
+	@EventHandler(ignoreCancelled=true)
 	public void playerMove(PlayerMoveEvent evt) {
 		Player player = evt.getPlayer();
 
@@ -37,18 +35,14 @@ public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 		double distanceSquared = playerLocation.distanceSquared(anchor);
 
 		if (distanceSquared >= squaredLeashLength) {
-			Location newLocation = new Location(player.getWorld(), anchor.getX(), anchor.getY(), anchor.getZ());
+			Location newLocation = player.getLocation().clone(); // keep pitch/yaw + look direction/etc.
 
+			// update to pull back to anchor
 			newLocation.setX(anchor.getX());
 			newLocation.setY(anchor.getY());
 			newLocation.setZ(anchor.getZ());
 
-//			Vector lookingDirection = player.getEyeLocation().getDirection().clone();
-//			Vector bodyDirection = player.getLocation().getDirection().clone();
-
-			player.teleport(anchor);
-//			player.getLocation().setDirection(bodyDirection);
-//			player.getEyeLocation().setDirection(lookingDirection);
+			player.teleport(newLocation);
 		}
 	}
 
