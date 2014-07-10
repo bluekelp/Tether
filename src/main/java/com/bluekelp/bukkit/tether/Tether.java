@@ -16,31 +16,40 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 
-	Map<String, Location> playerTetherMap = new HashMap<String, Location>();
+	class Leash {
+		Location location;
+		double length;
 
-	double leashLength = 3;
+		Leash(Location _loc, double _length) {
+			location = _loc.clone();
+			length = _length;
+		}
+	}
+
+	Map<String, Leash> playerTetherMap = new HashMap<String, Leash>();
 
 	@EventHandler(ignoreCancelled=true)
 	public void playerMove(PlayerMoveEvent evt) {
 		Player player = evt.getPlayer();
 
-		Location anchor = playerTetherMap.get(player.getName());
-		if (anchor == null) {
+		Leash leash = playerTetherMap.get(player.getName());
+		if (leash == null) {
 			return; // player not tethered
 		}
 
+		Location location = leash.location;
 		Location playerLocation = player.getLocation();
-		double squaredLeashLength = leashLength * leashLength;
+		double squaredLeashLength = leash.length * leash.length;
 
-		double distanceSquared = playerLocation.distanceSquared(anchor);
+		double distanceSquared = playerLocation.distanceSquared(location);
 
 		if (distanceSquared >= squaredLeashLength) {
 			Location newLocation = player.getLocation().clone(); // keep pitch/yaw + look direction/etc.
 
-			// update to pull back to anchor
-			newLocation.setX(anchor.getX());
-			newLocation.setY(anchor.getY());
-			newLocation.setZ(anchor.getZ());
+			// update to pull back to anchor point
+			newLocation.setX(location.getX());
+			newLocation.setY(location.getY());
+			newLocation.setZ(location.getZ());
 
 			player.teleport(newLocation);
 		}
@@ -83,7 +92,19 @@ public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 		Player player = (Player) sender;
 
 		if (command.getName().equalsIgnoreCase("tether")) {
-			playerTetherMap.put(player.getName(), player.getLocation().clone());
+			double leashLength = Double.NaN;
+			if (args.length>0) {
+				try {
+					leashLength = Double.parseDouble(args[0]);
+				}
+				catch (NumberFormatException ex) {} // keep default
+			}
+			if (leashLength == Double.NaN) {
+				leashLength = 3; // default value
+			}
+
+			Leash leash = new Leash(player.getLocation().clone(), leashLength);
+			playerTetherMap.put(player.getName(), leash);
 			return true;
 		}
 
