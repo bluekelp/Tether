@@ -1,6 +1,8 @@
 package com.bluekelp.bukkit.tether;
 
-import org.bukkit.ChatColor;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,32 +14,41 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.List;
+import org.bukkit.util.Vector;
 
 public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 
-	Location anchor;
-	double leashLength;
+	Map<String, Location> playerTetherMap = new HashMap<String, Location>();
+
+	double leashLength = 3;
 
 	@EventHandler
 	public void playerMove(PlayerMoveEvent evt) {
 		Player player = evt.getPlayer();
+
+		Location anchor = playerTetherMap.get(player.getName());
+		if (anchor == null) {
+			return; // player not tethered
+		}
+
 		Location playerLocation = player.getLocation();
 		double squaredLeashLength = leashLength * leashLength;
 
-		double distanceSquared = playerLocation.distanceSquared(anchor); 
-		
-		if ( distanceSquared >= squaredLeashLength ) {
-			debug("too far from anchor");
-			Location newLocation = playerLocation.clone();  // clone to keep pitch/yaw
-			
-			// update just x,y,z
+		double distanceSquared = playerLocation.distanceSquared(anchor);
+
+		if (distanceSquared >= squaredLeashLength) {
+			Location newLocation = new Location(player.getWorld(), anchor.getX(), anchor.getY(), anchor.getZ());
+
 			newLocation.setX(anchor.getX());
 			newLocation.setY(anchor.getY());
 			newLocation.setZ(anchor.getZ());
 
+//			Vector lookingDirection = player.getEyeLocation().getDirection().clone();
+//			Vector bodyDirection = player.getLocation().getDirection().clone();
+
 			player.teleport(anchor);
+//			player.getLocation().setDirection(bodyDirection);
+//			player.getEyeLocation().setDirection(lookingDirection);
 		}
 	}
 
@@ -46,67 +57,47 @@ public class Tether extends JavaPlugin implements CommandExecutor, Listener {
 	}
 
 	public void onEnable() {
-        PluginDescriptionFile description = this.getDescription();
-        debug( description.getName() + " version " + description.getVersion() + " is enabled!" );
+		this.loadConfig();
 
-        getCommand("tether").setExecutor(this);
-        getCommand("untether").setExecutor(this);
-    }
+		getCommand("tether").setExecutor(this);
+		getCommand("untether").setExecutor(this);
+
+		registerEvents();
+	}
+
+	public void onDisable() {
+		this.unregisterEvents();
+		playerTetherMap.clear();
+	}
 
 	void registerEvents() {
 		getServer().getPluginManager().registerEvents(this, this);
 	}
-	
+
 	void loadConfig() {
-		this.reloadConfig();  // load changes
-
-		double x = this.getConfig().getDouble("tether.anchor.x", 0);
-		double y = this.getConfig().getDouble("tether.anchor.y", 100);
-		double z = this.getConfig().getDouble("tether.anchor.z", 0);
-
-		anchor = new Location(getServer().getWorlds().get(0), x, y, z);
-		
-		leashLength = this.getConfig().getDouble("tether.leash_length", 10);
 	}
 
 	void unregisterEvents() {
-		HandlerList.unregisterAll((Listener)this);
+		HandlerList.unregisterAll((Listener) this);
 	}
 
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+		if (false == sender instanceof Player) {
+			return false;
+		}
+
+		Player player = (Player) sender;
+
 		if (command.getName().equalsIgnoreCase("tether")) {
-			this.loadConfig();
-			debug("registering events");
-			registerEvents();
+			playerTetherMap.put(player.getName(), player.getLocation().clone());
 			return true;
 		}
-		
-		if ( command.getName().equalsIgnoreCase("untether")) {
-			debug("un-registering events");
-			this.unregisterEvents();
+
+		if (command.getName().equalsIgnoreCase("untether")) {
+			playerTetherMap.remove(player.getName());
 			return true;
 		}
+
 		return false;
 	}
-
-    boolean anonymousCheck(CommandSender sender) {
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("Cannot execute that command, I don't know who you are!");
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    Player matchPlayer(String[] split, CommandSender sender) {
-        Player player;
-        List<Player> players = getServer().matchPlayer(split[0]);
-        if (players.isEmpty()) {
-            sender.sendMessage(ChatColor.RED + "Unknown player");
-            player = null;
-        } else {
-            player = players.get(0);
-        }
-        return player;
-    }
 }
